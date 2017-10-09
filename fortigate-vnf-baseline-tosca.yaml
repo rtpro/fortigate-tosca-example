@@ -1,0 +1,228 @@
+tosca_definitions_version: tosca_simple_yaml_1_0
+
+imports:
+  - openstack.yaml
+  - terminal.yaml
+  - aria-1.0
+
+dsl_definitions:
+  
+  openstack_config: &openstack_config
+    username: 
+    password: 
+    tenant_name: 
+    auth_url: https://rackspace-api.gigaspaces.com:5000/v3
+
+
+  terminal_auth: &terminal_auth
+    terminal_auth:
+      user: admin
+      password: ''
+      ip: { get_attribute: [ fortigate_ip, floating_ip_address ] }
+      prompt_check:
+        - '#'
+        - '$'
+      errors:
+        - "Command fail."
+ 
+topology_template:
+  
+  inputs:
+  
+    fortigate_image_url:
+      type: string
+      default: "https://s3-eu-west-1.amazonaws.com/cloudify-labs/images/FG562-DZ.img"
+  
+    flavor:
+      type: string
+      default: "2"
+
+    external_network_name:
+      type: string
+      default: GATEWAY_NET
+
+    router_name:
+      type: string
+      default: lab_router
+  
+  node_templates:
+  
+    fortigate_vnf_baseline_config:
+      type: aria.terminal.raw
+      properties:
+        terminal_auth:
+          user: admin
+          password: ''
+          ip: { get_attribute: [ fortigate_ip, floating_ip_address ] }
+          prompt_check:
+            - '#'
+            - '$'
+          errors:
+            - "Command fail."
+          exit_command: exit
+          key_content: ""
+          store_logs: false
+          port: 22
+      interfaces:
+        Standard:
+          create:
+            inputs:
+              calls: 
+                - action: exit
+          start:
+            inputs:
+              calls: 
+                - template: templates/fortigate-baseline.txt
+      requirements:
+        - host: fortigate_vnf
+  
+    fortigate_vnf:
+      type: aria.openstack.nodes.Server
+      properties:
+        openstack_config: *openstack_config
+        flavor: { get_input: flavor }
+        image: "fortigate"
+        management_network_name: { get_property: [ mgmt_network, resource_id ] }
+        server:
+          key_name: ''
+      requirements:
+        - port: mgmt_port
+        - port: private_network_port
+        - image: fortigate_image
+        - floating_ip: fortigate_ip
+  
+    lab_router:
+      type: aria.openstack.nodes.Router
+      properties:
+        openstack_config: *openstack_config
+        external_network: { get_input: external_network_name }
+        resource_id: { get_input: router_name }
+  
+    mgmt_port:
+      type: aria.openstack.nodes.Port
+      properties:
+        openstack_config: *openstack_config
+      requirements:
+        - network: mgmt_network
+        - subnet: mgmt_subnet
+        - security_group: security_group
+  
+    private_network_port:
+      type: aria.openstack.nodes.Port
+      properties:
+        openstack_config: *openstack_config
+      requirements:
+        - network: private_network
+        - subnet: private_network_subnet
+#        - security_group: security_group
+  
+    fortigate_image:
+      type: aria.openstack.nodes.Image
+      properties:
+        image:
+          container_format: "bare"
+          disk_format: "qcow2"
+        openstack_config: *openstack_config
+        image_url: {get_input : fortigate_image_url }
+        use_external_resource: true
+        create_if_missing: true
+        resource_id: "fortigate"
+  
+    mgmt_subnet:
+      type: aria.openstack.nodes.Subnet
+      properties:
+        openstack_config: *openstack_config
+        use_external_resource: true
+        resource_id: management_subnet
+        create_if_missing: true
+      requirements:
+        - network: mgmt_network
+        - router: lab_router
+  
+    mgmt_network:
+      type: aria.openstack.nodes.Network
+      properties:
+        openstack_config: *openstack_config
+        use_external_resource: true
+        create_if_missing: true
+        resource_id: management_network
+  
+#    public_network_subnet:
+#      type: aria.openstack.nodes.Subnet
+#      properties:
+#        openstack_config: *openstack_config
+#        use_external_resource: true
+#        resource_id: GATEWAY_SUBNET
+#      interfaces:
+#        Standard:
+#          create:
+#            inputs:
+#              args:
+#                cidr: 192.168.10.0/24
+#                ip_version: 4
+#      requirements:
+#        - network: public_network
+#        - router: lab_router
+  
+#    public_network:
+#      type: aria.openstack.nodes.Network
+#      properties:
+#        openstack_config: *openstack_config
+#        use_external_resource: true
+#        resource_id: GATEWAY_NET
+  
+    private_network_subnet:
+      type: aria.openstack.nodes.Subnet
+      properties:
+        openstack_config: *openstack_config
+        use_external_resource: true
+        create_if_missing: true
+        resource_id: private_subnet
+      interfaces:
+        Standard:
+          create:
+            inputs:
+              args:
+                cidr: 10.0.0.0/24
+                ip_version: 4
+      requirements:
+        - network: private_network
+  
+    private_network:
+      type: aria.openstack.nodes.Network
+      properties:
+        openstack_config: *openstack_config
+        use_external_resource: true
+        create_if_missing: true
+        resource_id: private_network
+ 
+    security_group:
+      type: aria.openstack.nodes.SecurityGroup
+      properties:
+        openstack_config: *openstack_config
+        description: generic security group
+        resource_id: fortinet_security_group
+        use_external_resource: true
+        create_if_missing: true
+        rules:
+          - remote_ip_prefix: 0.0.0.0/0
+            protocol: "TCP"
+          - remote_ip_prefix: 0.0.0.0/0
+            protocol: "UDP"
+          - remote_ip_prefix: 0.0.0.0/0
+            protocol: "ICMP"
+            port_range_min: 0
+            port_range_max: 0
+  
+    fortigate_ip:
+      type: aria.openstack.nodes.FloatingIP
+      properties:
+        openstack_config: *openstack_config
+        floatingip:
+          floating_network_name: { get_input: external_network_name }
+  
+  
+#  outputs:
+#  
+#    fortigate_vnf_mgmt_ip:
+#      value: { get_attribute: [fortigate_vnf, ip] }
