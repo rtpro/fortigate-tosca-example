@@ -147,30 +147,6 @@ topology_template:
         create_if_missing: true
         resource_id: management_network
   
-#    public_network_subnet:
-#      type: aria.openstack.nodes.Subnet
-#      properties:
-#        openstack_config: *openstack_config
-#        use_external_resource: true
-#        resource_id: GATEWAY_SUBNET
-#      interfaces:
-#        Standard:
-#          create:
-#            inputs:
-#              args:
-#                cidr: 192.168.10.0/24
-#                ip_version: 4
-#      requirements:
-#        - network: public_network
-#        - router: lab_router
-  
-#    public_network:
-#      type: aria.openstack.nodes.Network
-#      properties:
-#        openstack_config: *openstack_config
-#        use_external_resource: true
-#        resource_id: GATEWAY_NET
-  
     private_network_subnet:
       type: aria.openstack.nodes.Subnet
       properties:
@@ -222,7 +198,7 @@ topology_template:
           floating_network_name: { get_input: external_network_name }
   
   
-#  outputs:
+  outputs:
 #  
-#    fortigate_vnf_mgmt_ip:
-#      value: { get_attribute: [fortigate_vnf, ip] }
+    fortigate_vnf_mgmt_ip:
+      value: { get_attribute: [fortigate_ip, floating_ip_address] }
