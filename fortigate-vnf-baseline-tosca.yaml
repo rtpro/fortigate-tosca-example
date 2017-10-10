@@ -11,7 +11,7 @@ dsl_definitions:
     username: 
     password: 
     tenant_name: 
-    auth_url: https://rackspace-api.gigaspaces.com:5000/v3
+    auth_url: 
 
 
   terminal_auth: &terminal_auth
@@ -31,7 +31,7 @@ topology_template:
   
     fortigate_image_url:
       type: string
-      default: "https://s3-eu-west-1.amazonaws.com/cloudify-labs/images/FG562-DZ.img"
+      default: 
   
     flavor:
       type: string
