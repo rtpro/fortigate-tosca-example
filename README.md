@@ -19,6 +19,10 @@ Prior to using the template, some significant prequesites must be satisfied:
 ### Install Apache ARIA
 This is covered by ARIA [documentation](http://ariatosca.incubator.apache.org/getting-started/)
 
+### Install the Cloudify ARIA Extensions
+* Enter your ARIA virtualenv: `source <virtual-env-dir>/bin/activate`
+* Instrutions here: https://github.com/cloudify-cosmo/aria-extension-cloudify
+
 ### Install the Cloudify Openstack plugin
 * Enter your ARIA virtualenv: `source <virtual-env-dir>/bin/activate`
 * If [Wagon](https://github.com/cloudify-cosmo/wagon) isn't installed, install it: `pip install wagon`.
