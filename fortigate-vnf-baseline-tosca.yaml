@@ -8,11 +8,10 @@ imports:
 dsl_definitions:
   
   openstack_config: &openstack_config
-    username: 
-    password: 
-    tenant_name: 
-    auth_url: 
-
+    username: admin
+    password: cloudify1234
+    tenant_name: admin
+    auth_url: 185.98.149.13
 
   terminal_auth: &terminal_auth
     terminal_auth:
@@ -31,7 +30,7 @@ topology_template:
   
     fortigate_image_url:
       type: string
-      default: 
+      default: "https://s3-eu-west-1.amazonaws.com/cloudify-labs/images/FG562-DZ.img"
   
     flavor:
       type: string
